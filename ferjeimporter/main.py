@@ -29,11 +29,11 @@ def handler(event, context):
     print('\tClosing data-body')
     data['Body'].close()
     print('\tDecoding data')
+    print(signals)
     signals = signals.decode('utf-8')
 
     print('Parsing signals...')
-    filtered_signals = radar_data(data_filename,1571005498, 1)
-
+    filtered_signals = radar_data(signals,1571005498, 1)
     if len(filtered_signals) > 0:
         queue_url = os.environ.get('SQS_QUEUE_URL', '<No SQS_QUEUE_URL is set in this environment!>')
         print(f'Writing {len(filtered_signals)} items to an SQS message: {queue_url}...')

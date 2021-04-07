@@ -17,7 +17,7 @@ def radar_data(csv_data,start_time_EPOCH,timezone):
     for index, value in enumerate(header_row):
         header_row_lookup[value.strip()] = index
 
-    print(header_row_lookup)
+    #print(header_row_lookup)
     data = []
     for row in rows[1:]:
         if len(row) < len(header_row_lookup):
@@ -26,8 +26,8 @@ def radar_data(csv_data,start_time_EPOCH,timezone):
         time = float(row[header_row_lookup['TimeInSecondsPosix']])
         datetime_time = dt.datetime.fromtimestamp(start_time_EPOCH + time)
         ship_signal = {}
-        ship_signal['timestamp'] = (str(datetime_time), '+0', str(timezone),':00')
-        ship_signal['ferryId'] = uuid.uuid4()
+        ship_signal['timestamp'] = str(datetime_time) + '+0'+ str(timezone) +':00'
+        ship_signal['ferryId'] = str(uuid.uuid4())
         ship_signal['lat'] = float(row[header_row_lookup['V1y']])
         ship_signal['lon'] = float(row[header_row_lookup['V1x']])
         ship_signal['source'] = "radar"
@@ -40,8 +40,8 @@ def radar_data(csv_data,start_time_EPOCH,timezone):
         data.append(ship_signal)
     return data
 
-# if __name__ == "__main__":
-#     with open("ScenarioLatLon.csv", "r") as f:
-#         csv_data = f.read()
-#     data=radar_data(csv_data,1571005498,1)
-#     print(data)
+if __name__ == "__main__":
+    with open("ScenarioLatLon.csv", "r") as f:
+        csv_data = f.read()
+    data=radar_data(csv_data,1571005498,1)
+    print(data)
