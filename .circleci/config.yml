@@ -63,14 +63,14 @@ jobs:
             # Set default region here to prevent circleci from masking us-east-1 in terraform plans
             AWS_DEFAULT_REGION: us-east-1
             ECR_BASE_URL: "314397620259.dkr.ecr.us-east-1.amazonaws.com"
-          command: docker build -t $ECR_BASE_URL/ferje-ais-importer-prod:$CIRCLE_SHA1 .
+          command: docker build -t $ECR_BASE_URL/ferje-radar-processor-prod:$CIRCLE_SHA1 .
       - run:
           name: Push
           environment:
             # Set default region here to prevent circleci from masking us-east-1 in terraform plans
             AWS_DEFAULT_REGION: us-east-1
             ECR_BASE_URL: "314397620259.dkr.ecr.us-east-1.amazonaws.com"
-          command: docker push $ECR_BASE_URL/ferje-ais-importer-prod:$CIRCLE_SHA1
+          command: docker push $ECR_BASE_URL/ferje-radar-processor-prod:$CIRCLE_SHA1
   plan-production:
     docker:
       - image: lindhagen/terraform-azure-util:0.14.3

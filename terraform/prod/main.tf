@@ -10,12 +10,13 @@ terraform {
 
   backend "s3" {
     bucket = "lokalvert-terraform-state"
-    key    = "ferje-ais-importer/prod.terraform.tfstate"
+    key    = "ferje-radar-processor/prod.terraform.tfstate"
     region = "us-east-1"
   }
 }
 
 provider "aws" {
+  allowed_account_ids = ["314397620259"]
   # Configuration options
   region = "us-east-1"
 }
@@ -23,7 +24,7 @@ provider "aws" {
 data "aws_region" "current" {}
 
 locals {
-  application_name = "ferje-ais-importer"
+  application_name = "ferje-radar-processor"
   environment = "prod"
 
   last_commit_sha = trimspace(file("../../.git/${trimspace(trimprefix(file("../../.git/HEAD"), "ref:"))}"))
@@ -37,11 +38,12 @@ locals {
   }
 }
 
-module "ferjeimporter" {
+module "ferjeradarprocessor" {
   source = "../template"
   application_name = local.application_name
   environment = local.environment
   function_handler = "main.handler"
+  ferje_pathtaker_source_queue_name = "ferje-ais-importer-prod-pathtaker-source"
   docker_image_tag = local.last_commit_sha
   tags = local.tags
 

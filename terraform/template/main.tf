@@ -72,8 +72,8 @@ resource "aws_iam_role_policy_attachment" "lambda_logs" {
   policy_arn = aws_iam_policy.lambda_logging.arn
 }
 
-resource "aws_s3_bucket" "ais_raw_files" {
-  bucket = "${local.qualified_name}-ais-raw"
+resource "aws_s3_bucket" "radar_raw_files" {
+  bucket = "${local.qualified_name}-radar-raw"
   tags = var.tags
 }
 
@@ -101,7 +101,7 @@ resource "aws_lambda_function" "ferjeaisimporter" {
   environment {
     variables = {
       foo = "bar"
-      SQS_QUEUE_URL = "https://sqs.${var.region}.amazonaws.com/${data.aws_caller_identity.current.account_id}/${aws_sqs_queue.pathtaker_source.name}"
+      SQS_QUEUE_URL = "https://sqs.${var.region}.amazonaws.com/${data.aws_caller_identity.current.account_id}/${data.aws_sqs_queue.pathtaker_source.name}"
     }
   }
 
@@ -117,11 +117,11 @@ resource "aws_lambda_permission" "allow_bucket_to_trigger_lambda" {
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.ferjeaisimporter.arn
   principal     = "s3.amazonaws.com"
-  source_arn    = aws_s3_bucket.ais_raw_files.arn
+  source_arn    = aws_s3_bucket.radar_raw_files.arn
 }
 
 resource "aws_s3_bucket_notification" "bucket_notification" {
-  bucket = aws_s3_bucket.ais_raw_files.id
+  bucket = aws_s3_bucket.radar_raw_files.id
 
   lambda_function {
     lambda_function_arn = aws_lambda_function.ferjeaisimporter.arn
@@ -147,13 +147,13 @@ resource "aws_iam_policy" "allow_managing_contents_in_bucket" {
       "Sid": "ListObjectsInBucket",
       "Effect": "Allow",
       "Action": ["s3:ListBucket"],
-      "Resource": ["arn:aws:s3:::${aws_s3_bucket.ais_raw_files.bucket}"]
+      "Resource": ["arn:aws:s3:::${aws_s3_bucket.radar_raw_files.bucket}"]
     },
     {
       "Sid": "AllObjectActions",
       "Effect": "Allow",
       "Action": "s3:*Object",
-      "Resource": ["arn:aws:s3:::${aws_s3_bucket.ais_raw_files.bucket}/*"]
+      "Resource": ["arn:aws:s3:::${aws_s3_bucket.radar_raw_files.bucket}/*"]
     }
   ]
 }
@@ -168,9 +168,8 @@ resource "aws_iam_role_policy_attachment" "lambda_to_bucket" {
 // This is the source of data for the Pathtaker microservice.
 // Ferje-AIS-importer is the temporary owner of this resource,
 // but this might move to ferje-pathtaker at a later moment
-resource "aws_sqs_queue" "pathtaker_source" {
-  name                      = "${local.qualified_name}-pathtaker-source"
-  tags = var.tags
+data "aws_sqs_queue" "pathtaker_source" {
+  name = var.ferje_pathtaker_source_queue_name
 }
 
 resource "aws_iam_policy" "write_to_queue" {
@@ -189,7 +188,7 @@ resource "aws_iam_policy" "write_to_queue" {
         "sqs:SendMessage"
       ],
       "Resource": [
-        "${aws_sqs_queue.pathtaker_source.arn}"
+        "${data.aws_sqs_queue.pathtaker_source.arn}"
       ]
     }
   ]

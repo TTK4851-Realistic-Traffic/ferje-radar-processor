@@ -22,3 +22,8 @@ variable "function_handler" {
 variable "tags" {
   type = map(string)
 }
+
+variable "ferje_pathtaker_source_queue_name" {
+  type = string
+  description = "Name of the SQS queue, where our Lambda should enqueue signals"
+}
