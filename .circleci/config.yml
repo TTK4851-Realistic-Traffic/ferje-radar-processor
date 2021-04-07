@@ -131,7 +131,7 @@ workflows:
             - Ferje Context
           filters:
             branches:
-              only: master
+              only: main
       - plan-production:
           context:
             - Ferje Context
