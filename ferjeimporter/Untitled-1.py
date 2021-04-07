@@ -26,79 +26,51 @@ VALID_OPERATING_AREA = CoordinatesArea(
 def hash_mmsi(mmsi):
     return hashlib.sha256(mmsi.encode()).hexdigest()
 
-def filter_and_clean_ais_items(signals, shipinformation):
-    """
-    Responsible for removing any irrelevant AIS signals.
-    This function may need to handle quite large lists, so it might be useful
-    to exploit dataprocessing libraries, such as Pandas
-    :param ais_items:
-    :return:
-    """
-    rows_signals = [x.split(';') for x in signals.split('\n')]
-    rows_shipinformation = [x.split(';') for x in shipinformation.split('\n')]
+def radar_data(csv_data,start_time_EPOCH,timezone):
+    # csv-file on format: time, lon, lat, heading(TimeInSecondsPosix,V1x,V1y,V1Heading)
+    #start_time_EPOCH i.e 1347516459425 evaluates to 2012-09-12 02:22:50 
+    #timezone: 1 for norway
+    rows = [x.split(',') for x in csv_data.split('\n')]
+    header_row = rows[0]
+    header_row_lookup = {}
+    for index, value in enumerate(header_row):
+        header_row_lookup[value.strip()] = index
 
-    header_signals = rows_signals[0]
-    header_signals_lookup = {}
-    for index, value in enumerate(header_signals):
-        header_signals_lookup[value.strip()] = index
-
-    header_shipinformation = rows_shipinformation[0]
-    header_shipinformation_lookup = {}
-    for index, value in enumerate(header_shipinformation):
-        header_shipinformation_lookup[value.strip()] = index
-
-    signalpoints=[]
-    timezone_Norway = pytz.timezone('Europe/Oslo')
-    timezone_UTC = pytz.timezone('UTC')
-
-    for row in rows_signals[1:]:
-        lon=float(row[header_signals_lookup['lon']])
-        lat=float(row[header_signals_lookup['lat']])
-        if (lat <= VALID_OPERATING_AREA.max_lat and lat >=VALID_OPERATING_AREA.min_lat and lon <= VALID_OPERATING_AREA.max_lon and lon >=VALID_OPERATING_AREA.min_lon):
-            print('True')
-            ship_signal = {}
-            timestamp=dt.datetime.strptime(row[header_signals_lookup['date_time_utc']], '%Y-%m-%d %H:%M:%S')
-            localized_timestamp = timezone_Norway.localize(timestamp)      
-            new_timezone_timestamp = localized_timestamp.astimezone(timezone_UTC)
-            ship_signal['timestamp'] =str(new_timezone_timestamp)
-            ship_signal['ferryId'] = hash_mmsi(row[header_signals_lookup['mmsi']])
-            ship_signal['lat'] = lat
-            ship_signal['lon'] = lon
-            ship_signal['source'] = "ais"
-            metadata = {}
-            for r in rows_shipinformation[1:]:
-                if ship_signal['ferryId'] == r[header_shipinformation_lookup['mmsi']].strip():
-                    metadata["width"] = round(float(r[header_shipinformation_lookup['width']]),0)
-                    metadata["length"] = round(float(r[header_shipinformation_lookup["length"]]),0)
-                    metadata["type"] = r[header_shipinformation_lookup["type"]]
-            metadata["heading"] = float(row[header_signals_lookup['true_heading']])
-            ship_signal['metadata']=metadata
-            signalpoints.append(ship_signal)
-            print(signalpoints)  
-    return signalpoints
+    print(header_row_lookup)
+    data = []
+    for row in rows[1:]:
+        if len(row) < len(header_row_lookup):
+            print(f"Columns in row is shorter than header columns: {row}")
+            continue
+        lon=float(row[header_row_lookup['V1x']])
+        lat=float(row[header_row_lookup['V1y']])
+        time = float(row[header_row_lookup['TimeInSecondsPosix']])
+        datetime_time = dt.datetime.fromtimestamp(start_time_EPOCH + time)
+        print(datetime_time)
+        ship_signal = {}
+        ship_signal['timestamp'] = str(datetime_time) + '+0' + str(timezone) +':00'
+        ship_signal['lat'] = lat
+        ship_signal['lon'] = lon
+        ship_signal['source'] = "radar"
+        metadata = {}
+        metadata["heading"] = float(row[header_row_lookup['V1Heading']])
+        ship_signal['metadata']=metadata
+        data.append(ship_signal)
+    return data
 
 if __name__ == '__main__':
     # Enkel måte å mate inn eksempelinput
-    ais_signals = """mmsi;lon;lat;date_time_utc;sog;cog;true_heading;nav_status;message_nr;source
-111111111;7.93557;63.1633;2018-01-01 16:58:42;0.0;59.5;511;-99;18;g
-111111111;7.93555;63.1633;2018-01-01 16:59:12;0.7;63.0;511;-99;18;g
-111111111;7.93547;63.1632;2018-01-01 17:00:14;0.1;208.4;511;-99;18;g
-111111111;7.9355;63.1633;2018-01-01 17:00:41;0.0;240.6;511;-99;18;g
-111111111;7.93552;63.1632;2018-01-01 17:06:32;0.1;221.3;511;-99;18;g
-111111111;7.93554;63.1632;2018-01-01 17:12:31;0.0;217.7;511;-99;18;g
-111111111;7.93549;63.1632;2018-01-01 17:15:32;0.0;216.9;511;-99;18;g
-111111111;7.93553;63.1632;2018-01-01 17:21:31;0.0;227.1;511;-99;18;g
-111111111;7.93557;63.1632;2018-01-01 17:27:31;0.0;207.4;511;-99;18;g
-111111111;7.93555;63.1633;2018-01-01 17:30:31;0.0;246.5;511;-99;18;g
-111111111;7.93554;63.1632;2018-01-01 17:33:32;0.0;246.9;511;-99;18;g
-111111111;7.93556;63.1632;2018-01-01 17:36:34;0.0;237.4;511;-99;18;g
-111111111;7.93555;63.1632;2018-01-01 17:39:31;0.0;241.0;511;-99;18;g
-215211000;7.66103;63.0553;2018-01-01 00:01:42;0.0;93.0;307;5;3;g
-215211000;7.66102;63.0553;2018-01-01 00:07:44;0.1;150.0;307;5;3;g
-215211000;7.66101;63.0553;2018-01-01 00:10:45;0.1;178.0;307;5;3;g
-215211000;7.66101;63.0553;2018-01-01 00:13:44;0.0;209.0;307;5;3;g
-215211000;7.661;63.0553;2018-01-01 00:16:45;0.0;114.0;307;5;3;g"""
-    shipinformation = """ mmsi;imo;name;callsign;length;width;type
-    111111111;7110024;TANUNDA;VJHN;25;8;90.0
-    215211000;8712166;KEY FIGHTER;9HA2671;104;17;80.0"""
-    filter_and_clean_ais_items(ais_signals, shipinformation)
+    radar_signals = """TimeInSecondsPosix,V1x,V1y,V1Heading
+2488,63.4350806,10.3925694,6.2083507676063
+2488.10006671114,63.4350804556213,10.3925717383907,6.2083507676063
+2488.20013342228,63.4350803294644,10.3925739755931,6.2148168217095
+2488.30020013342,63.4350802204113,10.3925761158818,6.22139227564389
+2488.40026684456,63.4350801273442,10.3925781635315,6.22805033563528
+2488.5003335557,63.4350800491451,10.3925801228169,6.23475792912945
+2488.60040026684,63.4350799846961,10.3925819980126,6.24147494941483
+2488.70046697799,63.4350799328792,10.3925837933933,6.24815351284129
+2488.80053368913,63.4350798925765,10.3925855132337,6.25473723764601
+2488.90060040027,63.4350798626701,10.3925871618084,6.26116071489985"""
+
+    data=radar_data(radar_signals,1571005498,1)
+    print(data)

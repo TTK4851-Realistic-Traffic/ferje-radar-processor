@@ -1,8 +1,8 @@
 # ferjeimporter/ais_processor.py
 from dataclasses import dataclass
 import datetime as dt
-import pytz
-import hashlib
+import uuid
+
 #import numpy as np
 # ...
 # 
@@ -23,23 +23,25 @@ def radar_data(csv_data,start_time_EPOCH,timezone):
         if len(row) < len(header_row_lookup):
             print(f"Columns in row is shorter than header columns: {row}")
             continue
-        lon=float(row[header_row_lookup['V1x']])
-        lat=float(row[header_row_lookup['V1y']])
         time = float(row[header_row_lookup['TimeInSecondsPosix']])
         datetime_time = dt.datetime.fromtimestamp(start_time_EPOCH + time)
-        print(datetime_time)
         ship_signal = {}
-        ship_signal['timestamp'] = concatenate((str(datetime_time), '+0', str(timezone),':00'))
-        ship_signal['lat'] = lat
-        ship_signal['lon'] = lon
+        ship_signal['timestamp'] = (str(datetime_time), '+0', str(timezone),':00')
+        ship_signal['ferryId'] = uuid.uuid4()
+        ship_signal['lat'] = float(row[header_row_lookup['V1y']])
+        ship_signal['lon'] = float(row[header_row_lookup['V1x']])
         ship_signal['source'] = "radar"
         metadata = {}
         metadata["heading"] = float(row[header_row_lookup['V1Heading']])
+        metadata["widht"] = 1
+        metadata["lenghth"] = 5
+        metadata["type"] = 37
         ship_signal['metadata']=metadata
         data.append(ship_signal)
     return data
 
-if __name__ == "__main__":
-    with open("ScenarioLatLon.csv", "r") as f:
-        csv_data = f.read()
-    radar_data(csv_data,1571005498,1)
+# if __name__ == "__main__":
+#     with open("ScenarioLatLon.csv", "r") as f:
+#         csv_data = f.read()
+#     data=radar_data(csv_data,1571005498,1)
+#     print(data)
