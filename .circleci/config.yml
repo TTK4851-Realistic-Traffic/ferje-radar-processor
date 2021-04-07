@@ -143,4 +143,4 @@ workflows:
             - plan-production
           filters:
             branches:
-              only: master
+              only: main
