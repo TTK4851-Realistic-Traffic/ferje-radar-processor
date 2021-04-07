@@ -66,12 +66,8 @@ class IngestAisData(TestCase):
         # Files we are using in this test
         uploaded_files = [
             S3BucketFile(
-                object_key='2018-07-02.csv',
-                content=_read_testdata('2018-07-02.csv'),
-            ),
-            S3BucketFile(
-                object_key='2018-07-02_shipdata.csv',
-                content=_read_testdata('2018-07-02_shipdata.csv'),
+                object_key='ScenarioLatLon.csv',
+                content=_read_testdata('ScenarioLatLon.csv'),
             ),
         ]
         # Upload the data to the mocked instance of S3
@@ -96,22 +92,3 @@ class IngestAisData(TestCase):
         # for file in uploaded_files:
         #     self.assertNotIn(file.object_key, objects_in_s3)
 
-    def test_import_ignores_missing_shipdata(self):
-        """
-        Ensures that if for example the file 2018-07-01.csv does not have 2018-07-01_shipdata.csv,
-        then we ignore that file and possibly log and error to the console.
-        :return:
-        """
-        uploaded_files = [
-            S3BucketFile(
-                object_key='2018-07-02.csv',
-                content=_read_testdata('2018-07-02.csv'),
-            ),
-        ]
-
-        for file in uploaded_files:
-            self.s3.put_object(Bucket=TEST_S3_BUCKET_NAME, Key=file.object_key, Body=file.content)
-
-        event = s3_event_bucket_uploaded(uploaded_files)
-        # Run test
-        handler(event, {})
