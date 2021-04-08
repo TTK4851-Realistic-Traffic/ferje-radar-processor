@@ -4,6 +4,12 @@ import boto3
 
 from radarprocessor.radar_processor import radar_data
 
+# times in radar measures are typically recorded as an offset from 0.
+# However, our storage system need to have some sort of absolute time as reference,
+# which can be calculated from RADAR_MEASURE_BASE_TIMESTAMP + radar_measure_time.
+# The current timestamp has been arbitrarily chosen
+RADAR_MEASURE_BASE_TIMESTAMP = 1571005498
+
 
 def chunk(lst, n):
     """Yield successive n-sized chunks from lst."""
@@ -38,9 +44,9 @@ def handler(event, context):
     signals = signals.decode('utf-8')
 
     print('Parsing signals...')
-    filtered_signals = radar_data(signals,1571005498, 1)
-    chunks=chunk(filtered_signals, 100)
-    #print(list(chunks))
+    filtered_signals = radar_data(signals, RADAR_MEASURE_BASE_TIMESTAMP)
+    chunks = chunk(filtered_signals, 100)
+
     for signal_chunks in chunks:
         if len(signal_chunks) > 0:
             queue_url = os.environ.get('SQS_QUEUE_URL', '<No SQS_QUEUE_URL is set in this environment!>')
@@ -57,5 +63,5 @@ def handler(event, context):
 
     return {
         'statusCode': 200,
-        'body': ''
+        'body': '',
     }

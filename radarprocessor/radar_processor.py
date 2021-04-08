@@ -1,11 +1,19 @@
-import datetime as dt
+from datetime import datetime
 import uuid
 
-#import numpy as np
-# ...
-# 
+import pytz
 
-def radar_data(csv_data,start_time_EPOCH,timezone):
+TIMEZONE_NORWAY = pytz.timezone('Europe/Oslo')
+TIMEZONE_UTC = pytz.timezone('UTC')
+
+
+def _build_timestamp_utc(time_start_base: int, time_offset: float) -> str:
+    time = datetime.fromtimestamp(time_start_base + time_offset)
+    time_source_localized = TIMEZONE_NORWAY.localize(time)
+    return str(time_source_localized.astimezone(TIMEZONE_UTC))
+
+
+def radar_data(csv_data,start_time_EPOCH):
     # csv-file on format: time, lon, lat, heading(TimeInSecondsPosix,V1x,V1y,V1Heading)
     #start_time_EPOCH i.e 1347516459425 evaluates to 2012-09-12 02:22:50 
     #timezone: 1 for norway
@@ -15,31 +23,31 @@ def radar_data(csv_data,start_time_EPOCH,timezone):
     for index, value in enumerate(header_row):
         header_row_lookup[value.strip()] = index
 
-    #print(header_row_lookup)
     data = []
     for row in rows[1:]:
         if len(row) < len(header_row_lookup):
             print(f"Columns in row is shorter than header columns: {row}")
             continue
-        time = float(row[header_row_lookup['TimeInSecondsPosix']])
-        datetime_time = dt.datetime.fromtimestamp(start_time_EPOCH + time)
-        ship_signal = {}
-        ship_signal['timestamp'] = str(datetime_time) + '+0'+ str(timezone) +':00'
-        ship_signal['ferryId'] = str(uuid.uuid4())
-        ship_signal['lat'] = float(row[header_row_lookup['V1y']])
-        ship_signal['lon'] = float(row[header_row_lookup['V1x']])
-        ship_signal['source'] = "radar"
-        metadata = {}
-        metadata["heading"] = float(row[header_row_lookup['V1Heading']])
-        metadata["widht"] = 1
-        metadata["lenghth"] = 5
-        metadata["type"] = 37
-        ship_signal['metadata']=metadata
+
+        time_offset_from_epoch = float(row[header_row_lookup['TimeInSecondsPosix']])
+
+        ship_signal = {
+            'timestamp': _build_timestamp_utc(start_time_EPOCH, time_offset_from_epoch),
+            'ferryId': str(uuid.uuid4()),
+            'lat': float(row[header_row_lookup['V1y']]),
+            'lon': float(row[header_row_lookup['V1x']]),
+            'source': 'radar',
+            'metadata': {
+                'heading': float(row[header_row_lookup['V1Heading']]),
+                # Estimating width and length was out of scope for the current project,
+                # but has potential for future work
+                'width': 1,
+                'length': 5,
+                # This type is chosen based on the assumption that most vessels tracked
+                # by this radar is some sort of leisure craft. We may wish to
+                # estimate a more precise type, at a later moment
+                'type': 37,
+            },
+        }
         data.append(ship_signal)
     return data
-
-if __name__ == "__main__":
-    with open("ScenarioLatLon.csv", "r") as f:
-        csv_data = f.read()
-    data=radar_data(csv_data,1571005498,1)
-    print(data)
