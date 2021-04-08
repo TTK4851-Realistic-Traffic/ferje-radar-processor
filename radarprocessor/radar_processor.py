@@ -18,6 +18,7 @@ def radar_data(csv_data,start_time_EPOCH):
     #start_time_EPOCH i.e 1347516459425 evaluates to 2012-09-12 02:22:50 
     #timezone: 1 for norway
     rows = [x.split(',') for x in csv_data.split('\n')]
+    ferryId = str(uuid.uuid4())
     header_row = rows[0]
     header_row_lookup = {}
     for index, value in enumerate(header_row):
@@ -33,7 +34,7 @@ def radar_data(csv_data,start_time_EPOCH):
 
         ship_signal = {
             'timestamp': _build_timestamp_utc(start_time_EPOCH, time_offset_from_epoch),
-            'ferryId': str(uuid.uuid4()),
+            'ferryId': ferryId,
             'lat': float(row[header_row_lookup['V1y']]),
             'lon': float(row[header_row_lookup['V1x']]),
             'source': 'radar',
