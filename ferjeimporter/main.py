@@ -4,10 +4,13 @@ import boto3
 
 from ferjeimporter.radar_processor import radar_data
 
+
 def chunk(lst, n):
     """Yield successive n-sized chunks from lst."""
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
+
+
 def handler(event, context):
     """
     Triggers when objects are created in an S3 storage. Responsible for loading raw
