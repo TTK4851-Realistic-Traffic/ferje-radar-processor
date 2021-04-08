@@ -83,7 +83,7 @@ resource "aws_lambda_function" "ferjeaisimporter" {
   package_type  = "Image"
   function_name = local.qualified_name
   role          = aws_iam_role.iam_for_lambda.arn
-  # This has to match the filename and function name in ../../ferjeimporter/main.py
+  # This has to match the filename and function name in ../../radarprocessor/main.py
   # That is to be executed
   handler       = null
   timeout = 900

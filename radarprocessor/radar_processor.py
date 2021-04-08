@@ -1,5 +1,3 @@
-# ferjeimporter/ais_processor.py
-from dataclasses import dataclass
 import datetime as dt
 import uuid
 

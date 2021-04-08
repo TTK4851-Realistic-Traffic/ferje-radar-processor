@@ -2,7 +2,7 @@ import json
 import os
 import boto3
 
-from ferjeimporter.radar_processor import radar_data
+from radarprocessor.radar_processor import radar_data
 
 
 def chunk(lst, n):

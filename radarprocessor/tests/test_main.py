@@ -3,8 +3,8 @@ import boto3
 import os
 from unittest import TestCase, mock
 
-from ferjeimporter.main import handler
-from ferjeimporter.tests.aws_test_helper import S3BucketFile, s3_event_bucket_uploaded
+from radarprocessor.main import handler
+from radarprocessor.tests.aws_test_helper import S3BucketFile, s3_event_bucket_uploaded
 
 AWS_DEFAULT_REGION = 'us-east-1'
 TEST_S3_BUCKET_NAME = 'my-test-bucket'
@@ -25,7 +25,7 @@ class IngestAisData(TestCase):
 
     def setUp(self) -> None:
         """
-        Creates our mocked S3 bucket which ferjeimporter.main.handler will automatically connect to
+        Creates our mocked S3 bucket which radarprocessor.main.handler will automatically connect to
         :return:
         """
         # Ensure test setup uses the correct test credentials
