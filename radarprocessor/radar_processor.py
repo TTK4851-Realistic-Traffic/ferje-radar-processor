@@ -35,8 +35,9 @@ def radar_data(csv_data,start_time_EPOCH):
         ship_signal = {
             'timestamp': _build_timestamp_utc(start_time_EPOCH, time_offset_from_epoch),
             'ferryId': ferryId,
-            'lat': float(row[header_row_lookup['V1y']]),
-            'lon': float(row[header_row_lookup['V1x']]),
+            # TODO V1x should actually be longitude, but is in the source set set as latitude
+            'lat': float(row[header_row_lookup['V1x']]),
+            'lon': float(row[header_row_lookup['V1y']]),
             'source': 'radar',
             'metadata': {
                 'heading': float(row[header_row_lookup['V1Heading']]),
